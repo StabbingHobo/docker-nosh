@@ -6,7 +6,10 @@ if ! [ -x "$(command -v docker)" ]; then
     echo 'Error: docker is not installed.' >&2
     exit 1
 fi
-if ! [ -x "$(command -v docker-compose)" ]; then
+#Docker Compose v2 drops the hyphen between 'docker-compose'
+#Updated commands to reflect the v2 command structures
+#Change 1
+if ! [ -x "$(command -v docker compose)" ]; then
     echo 'Error: docker-compose is not installed.' >&2
     exit 1
 fi
@@ -50,17 +53,20 @@ if [[ -n $domain ]]; then
     echo "Creating dummy certificate for $domain ..."
     path="/etc/letsencrypt/live/$domain"
     mkdir -p "$data_path/conf/live/$domain"
-    docker-compose run --rm --entrypoint "\
+    #Change #2
+    docker compose run --rm --entrypoint "\
         openssl req -x509 -nodes -newkey rsa:1024 -days 1\
             -keyout '$path/privkey.pem' \
             -out '$path/fullchain.pem' \
             -subj '/CN=localhost'" certbot
     echo
     echo "Starting nginx ..."
-    docker-compose up --force-recreate -d webserver
+    #Change 3
+    docker compose up --force-recreate -d webserver
     echo
     echo "Deleting dummy certificate for $domain ..."
-    docker-compose run --rm --entrypoint "\
+    #Change 4
+    docker compose run --rm --entrypoint "\
         rm -Rf /etc/letsencrypt/live/$domain && \
         rm -Rf /etc/letsencrypt/archive/$domain && \
         rm -Rf /etc/letsencrypt/renewal/$domain.conf" certbot
@@ -78,7 +84,8 @@ if [[ -n $domain ]]; then
     esac
     # Enable staging mode if needed
     if [ $staging != "0" ]; then staging_arg="--staging"; fi
-    docker-compose run --rm --entrypoint "\
+    #Change 5
+    docker compose run --rm --entrypoint "\
         certbot certonly --webroot -w /var/www/certbot \
             $staging_arg \
             $email_arg \
@@ -88,11 +95,13 @@ if [[ -n $domain ]]; then
             --force-renewal" certbot
     echo
     echo "Reloading nginx ..."
-    docker-compose exec webserver webserver -s reload
+    #Change 6
+    docker compose exec webserver webserver -s reload
 else
     cp ./nginx_old.conf ./nginx.conf
     echo "" > ./nosh_uri.txt
 fi
 echo "Running NOSH..."
-docker-compose up -d
+#Change 7
+docker compose up -d
 exit 0
